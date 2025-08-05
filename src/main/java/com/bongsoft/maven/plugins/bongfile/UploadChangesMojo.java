@@ -18,11 +18,14 @@ import java.util.regex.Pattern;
 @Mojo(name = "upload-changes", defaultPhase = LifecyclePhase.VERIFY)
 public class UploadChangesMojo extends AbstractMojo {
 
-    private static final List<String> VALID_EXTENSIONS = Arrays.asList(".java", ".xml", ".jsp", ".js", ".css", ".properties", ".html");
-    private static final List<String> SKIP_FILES = Arrays.asList("pom.xml", "README.md", "LICENSE", ".gitignore");
+    private static final List<String> VALID_EXTENSIONS = Arrays.asList(
+            ".java", ".xml", ".jsp", ".js", ".css", ".properties", ".html"
+    );
+    private static final List<String> SKIP_FILES = Arrays.asList(
+            "pom.xml", "context-crypto-test.xml", "globals.properties", "README.md", "LICENSE", ".gitignore"
+    );
 
     private static final String SRC_MAIN_JAVA = "src" + File.separator + "main" + File.separator + "java" + File.separator;
-    private static final String SRC_MAIN_RESOURCES = "src" + File.separator + "main" + File.separator + "resources" + File.separator;
     private static final String SRC_MAIN_WEBAPP = "src" + File.separator + "main" + File.separator + "webapp" + File.separator;
 
     @Parameter(property = "commits")
