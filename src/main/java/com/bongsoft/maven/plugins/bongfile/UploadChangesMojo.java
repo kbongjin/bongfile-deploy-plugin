@@ -58,6 +58,9 @@ public class UploadChangesMojo extends AbstractMojo {
     @Parameter(property = "remotePath", defaultValue = "/opt/deploy/")
     private String remotePath;
 
+    @Parameter(property = "uploadFilePath")
+    private String uploadFilePath;
+
     private final Pattern pattern = Pattern.compile("^src[/\\\\]main[/\\\\]resources(?:-[a-zA-Z0-9]+)?([/\\\\].*)?$");
 
     public void setAppRootPath(String appRootPath) {
@@ -66,19 +69,29 @@ public class UploadChangesMojo extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
 
-        getLog().info("appRootPath: " + appRootPath);
         try {
-            Set<String> changedFiles = getChangedFiles();
+            Path uploadFile;
+            if (uploadFilePath != null && !uploadFilePath.isEmpty()) {
+                getLog().info("Using uploadFilePath: " + uploadFilePath);
+                uploadFile = Paths.get(uploadFilePath).toAbsolutePath();
+                if (!Files.exists(uploadFile)) {
+                    throw new MojoExecutionException("Upload file does not exist: " + uploadFile);
+                }
+            } else {
+                getLog().info("Using default appRootPath: " + appRootPath);
 
-            getLog().info("Changed Files: " + changedFiles.size() + " files");
-            changedFiles.forEach(getLog()::info);
+                Set<String> changedFiles = getChangedFiles();
 
-            List<Path> builtFiles = findBuiltFiles(changedFiles);
+                getLog().info("Changed Files: " + changedFiles.size() + " files");
+                changedFiles.forEach(getLog()::info);
 
-            getLog().info("Built Files: " + builtFiles.size() + " files");
-            Path compressedFile = compressFiles(builtFiles);
+                List<Path> builtFiles = findBuiltFiles(changedFiles);
 
-            uploadFiles(Arrays.asList(compressedFile));
+                getLog().info("Built Files: " + builtFiles.size() + " files");
+                uploadFile = compressFiles(builtFiles);
+            }
+
+            uploadFiles(Arrays.asList(uploadFile));
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed to upload changed files", e);
