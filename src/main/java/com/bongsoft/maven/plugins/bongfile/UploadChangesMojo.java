@@ -211,6 +211,7 @@ public class UploadChangesMojo extends AbstractMojo {
     }
 
     protected Path resolveBuiltPath(String sourcePath, Path appRootDir) {
+        sourcePath = sourcePath.replace("/", File.separator).replace("\\", File.separator);
         if (sourcePath.endsWith(".java")) {
             String classPath = sourcePath
                     .replace(SRC_MAIN_JAVA, "")
