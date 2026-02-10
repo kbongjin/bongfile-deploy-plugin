@@ -145,10 +145,16 @@ public class UploadChangesMojo extends AbstractMojo {
         Set<String> files = new HashSet<>();
 
         if (commits != null && !commits.isEmpty()) {
-            List<String> commitList = Arrays.asList(commits.split(","));
-            for (int i = 0; i < commitList.size() - 1; i++) {
-                String cmd = String.format("git diff --name-only %s %s", commitList.get(i), commitList.get(i + 1));
-                files.addAll(runAndCollect(cmd));
+            for (String token : commits.split(",")) {
+                String trimmed = token.trim();
+                String cmd;
+                if (trimmed.contains("..")) {
+                    cmd = String.format("git diff --name-only %s", trimmed);
+                } else {
+                    cmd = String.format("git show --name-only --pretty=format: %s", trimmed);
+                }
+                List<String> lines = runAndCollect(cmd);
+                lines.stream().filter(l -> !l.isEmpty()).forEach(files::add);
             }
         } else if (svnRevisions != null && !svnRevisions.isEmpty()) {
             String cmd = String.format("svn diff -r %s --summarize", svnRevisions);
