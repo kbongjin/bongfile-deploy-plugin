@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 public class UploadChangesMojo extends AbstractMojo {
 
     private static final List<String> VALID_EXTENSIONS = Arrays.asList(
-            ".java", ".xml", ".jsp", ".js", ".css", ".properties", ".html"
+            ".java", ".xml", ".jsp", ".jspf", ".js", ".css", ".properties", ".html", ".png", ".gif", ".jpg"
     );
     private static final List<String> SKIP_FILES = Arrays.asList(
             "pom.xml", "context-crypto-test.xml", "globals.properties", "README.md", "LICENSE", ".gitignore"
@@ -195,6 +195,14 @@ public class UploadChangesMojo extends AbstractMojo {
 		    Path targetPath = resolveBuiltPath(file, appRootDir);
 		    if (Files.exists(targetPath)) {
 			    result.add(targetPath);
+			    if (file.endsWith(".java")) {
+				    String baseName = targetPath.getFileName().toString().replace(".class", "");
+				    try (DirectoryStream<Path> stream = Files.newDirectoryStream(targetPath.getParent(), baseName + "$*.class")) {
+					    stream.forEach(result::add);
+				    } catch (IOException e) {
+					    getLog().warn("  Failed to scan inner classes: " + e.getMessage());
+				    }
+			    }
 		    } else {
                 getLog().warn("  File does not exist: " + targetPath);
             }
