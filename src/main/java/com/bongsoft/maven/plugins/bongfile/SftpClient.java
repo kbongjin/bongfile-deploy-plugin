@@ -26,6 +26,32 @@ public class SftpClient implements AutoCloseable {
 		sftpChannel.put(localFile.toAbsolutePath().toString(), remoteFilePath);
 	}
 
+	public boolean exists(String remoteFilePath) {
+		try {
+			sftpChannel.lstat(remoteFilePath);
+			return true;
+		} catch (SftpException e) {
+			return false;
+		}
+	}
+
+	public void rename(String from, String to) throws SftpException {
+		sftpChannel.rename(from, to);
+	}
+
+	public void mkdirs(String remoteDir) throws SftpException {
+		if (exists(remoteDir)) return;
+		int lastSlash = remoteDir.lastIndexOf('/');
+		if (lastSlash > 0) {
+			mkdirs(remoteDir.substring(0, lastSlash));
+		}
+		try {
+			sftpChannel.mkdir(remoteDir);
+		} catch (SftpException e) {
+			if (!exists(remoteDir)) throw e;
+		}
+	}
+
 	public void connect() throws JSchException {
 		session.connect();
 		Channel channel = session.openChannel("sftp");

@@ -61,6 +61,9 @@ public class UploadChangesMojo extends AbstractMojo {
     @Parameter(property = "uploadFilePath")
     private String uploadFilePath;
 
+    @Parameter(property = "directUpload", defaultValue = "false")
+    private boolean directUpload;
+
     private final Pattern pattern = Pattern.compile("^src[/\\\\]main[/\\\\]resources(?:-[a-zA-Z0-9]+)?([/\\\\].*)?$");
 
     public void setAppRootPath(String appRootPath) {
@@ -70,12 +73,16 @@ public class UploadChangesMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
 
         try {
-            Path uploadFile;
             if (uploadFilePath != null && !uploadFilePath.isEmpty()) {
                 getLog().info("Using uploadFilePath: " + uploadFilePath);
-                uploadFile = Paths.get(uploadFilePath).toAbsolutePath();
+                Path uploadFile = Paths.get(uploadFilePath).toAbsolutePath();
                 if (!Files.exists(uploadFile)) {
                     throw new MojoExecutionException("Upload file does not exist: " + uploadFile);
+                }
+                if (directUpload) {
+                    uploadIndividualFiles(Collections.singletonList(uploadFile), null);
+                } else {
+                    uploadFiles(Collections.singletonList(uploadFile));
                 }
             } else {
                 getLog().info("Using default appRootPath: " + appRootPath);
@@ -88,10 +95,14 @@ public class UploadChangesMojo extends AbstractMojo {
                 List<Path> builtFiles = findBuiltFiles(changedFiles);
 
                 getLog().info("Built Files: " + builtFiles.size() + " files");
-                uploadFile = compressFiles(builtFiles);
-            }
 
-            uploadFiles(Arrays.asList(uploadFile));
+                if (directUpload) {
+                    Path appRootDir = Paths.get("").toAbsolutePath().resolve(appRootPath);
+                    uploadIndividualFiles(builtFiles, appRootDir);
+                } else {
+                    uploadFiles(Collections.singletonList(compressFiles(builtFiles)));
+                }
+            }
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed to upload changed files", e);
@@ -244,6 +255,38 @@ public class UploadChangesMojo extends AbstractMojo {
                 String remoteFile = remotePath + file.getFileName().toString();
                 sftpClient.uploadFile(file, remoteFile);
                 getLog().info("Uploaded: " + baseDir.relativize(file) + " → " + remoteFile);
+            }
+        }
+    }
+
+    private void uploadIndividualFiles(List<Path> files, Path appRootDir) throws Exception {
+        String remoteBase = remotePath.endsWith("/") ? remotePath : remotePath + "/";
+        try (SftpClient sftpClient = createSftpClient()) {
+            for (Path file : files) {
+                String relativePath = (appRootDir != null && file.startsWith(appRootDir))
+                        ? appRootDir.relativize(file).toString().replace(File.separator, "/")
+                        : file.getFileName().toString();
+
+                String remoteFilePath = remoteBase + relativePath;
+                String remoteDir = remoteFilePath.substring(0, remoteFilePath.lastIndexOf('/'));
+
+                sftpClient.mkdirs(remoteDir);
+
+                if (sftpClient.exists(remoteFilePath)) {
+                    String bakPath = remoteFilePath + ".bak";
+                    if (sftpClient.exists(bakPath)) {
+                        int i = 1;
+                        while (sftpClient.exists(remoteFilePath + ".bak" + i)) {
+                            i++;
+                        }
+                        bakPath = remoteFilePath + ".bak" + i;
+                    }
+                    sftpClient.rename(remoteFilePath, bakPath);
+                    getLog().info("  Backed up: " + remoteFilePath + " → " + bakPath);
+                }
+
+                sftpClient.uploadFile(file, remoteFilePath);
+                getLog().info("Uploaded: " + relativePath + " → " + remoteFilePath);
             }
         }
     }
