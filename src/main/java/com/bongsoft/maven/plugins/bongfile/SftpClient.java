@@ -39,6 +39,10 @@ public class SftpClient implements AutoCloseable {
 		sftpChannel.rename(from, to);
 	}
 
+	public void remove(String remoteFilePath) throws SftpException {
+		sftpChannel.rm(remoteFilePath);
+	}
+
 	public void mkdirs(String remoteDir) throws SftpException {
 		if (exists(remoteDir)) return;
 		int lastSlash = remoteDir.lastIndexOf('/');

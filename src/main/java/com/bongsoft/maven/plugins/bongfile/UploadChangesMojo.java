@@ -9,6 +9,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.*;
 
 import java.io.*;
+import java.io.PrintWriter;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -260,7 +261,10 @@ public class UploadChangesMojo extends AbstractMojo {
     }
 
     private void uploadIndividualFiles(List<Path> files, Path appRootDir) throws Exception {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
         String remoteBase = remotePath.endsWith("/") ? remotePath : remotePath + "/";
+        List<String[]> manifestEntries = new ArrayList<>();
+
         try (SftpClient sftpClient = createSftpClient()) {
             for (Path file : files) {
                 String relativePath = (appRootDir != null && file.startsWith(appRootDir))
@@ -272,8 +276,9 @@ public class UploadChangesMojo extends AbstractMojo {
 
                 sftpClient.mkdirs(remoteDir);
 
+                String bakPath = "";
                 if (sftpClient.exists(remoteFilePath)) {
-                    String bakPath = remoteFilePath + ".bak";
+                    bakPath = remoteFilePath + ".bak";
                     if (sftpClient.exists(bakPath)) {
                         int i = 1;
                         while (sftpClient.exists(remoteFilePath + ".bak" + i)) {
@@ -287,8 +292,24 @@ public class UploadChangesMojo extends AbstractMojo {
 
                 sftpClient.uploadFile(file, remoteFilePath);
                 getLog().info("Uploaded: " + relativePath + " → " + remoteFilePath);
+                manifestEntries.add(new String[]{remoteFilePath, bakPath});
             }
         }
+
+        writeManifest(manifestEntries, timestamp);
+    }
+
+    private void writeManifest(List<String[]> entries, String timestamp) throws IOException {
+        Path manifestFile = Paths.get("deploy", "deploy-manifest-" + timestamp + ".txt");
+        Files.createDirectories(manifestFile.getParent());
+        try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(manifestFile))) {
+            writer.println("# bongfile-deploy manifest - " + timestamp);
+            writer.println("# remote=" + remoteUser + "@" + remoteHost + ":" + remotePort + remotePath);
+            for (String[] entry : entries) {
+                writer.println(entry[0] + "|" + entry[1]);
+            }
+        }
+        getLog().info("Manifest saved: " + manifestFile.toAbsolutePath());
     }
 
     private SftpClient createSftpClient() throws JSchException, MojoExecutionException {
