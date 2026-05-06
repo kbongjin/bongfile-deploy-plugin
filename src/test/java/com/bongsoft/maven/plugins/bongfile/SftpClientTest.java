@@ -20,10 +20,10 @@ public class SftpClientTest {
 	@Test
 	public void uploadFile() {
 		try (SftpClient client = new SftpClient.Builder()
-				.withRemoteHost("43.201.31.215")
+				.withRemoteHost("43.203.251.219")
 				.withRemotePort(22022)
 				.withRemoteUser("centos")
-				.withPrivateKeyPath("C:/projects/202505_hallym/im_dev_keyfair_20250722.pem")
+				.withPrivateKeyPath("C:/projects/202505_hallym/im_dev_aws_20260429.pem")
 				.build()) {
 
 			client.uploadFile(Paths.get("C:/projects/202505_hallym/function_create.sql"), "/home/centos/function_create.sql");
