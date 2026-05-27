@@ -19,7 +19,7 @@
     <plugin>
       <groupId>com.bongsoft</groupId>
       <artifactId>bongfile-deploy-plugin</artifactId>
-      <version>1.3-SNAPSHOT</version>
+      <version>1.4.0</version>
     </plugin>
   </plugins>
 </build>
