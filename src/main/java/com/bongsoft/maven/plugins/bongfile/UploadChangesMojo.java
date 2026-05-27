@@ -305,6 +305,12 @@ public class UploadChangesMojo extends AbstractMojo {
         try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(manifestFile))) {
             writer.println("# bongfile-deploy manifest - " + timestamp);
             writer.println("# remote=" + remoteUser + "@" + remoteHost + ":" + remotePort + remotePath);
+            if (commits != null && !commits.isEmpty()) {
+                writer.println("# commits=" + commits);
+            }
+            if (svnRevisions != null && !svnRevisions.isEmpty()) {
+                writer.println("# svnRevisions=" + svnRevisions);
+            }
             for (String[] entry : entries) {
                 writer.println(entry[0] + "|" + entry[1]);
             }
