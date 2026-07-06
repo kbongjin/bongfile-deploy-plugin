@@ -70,6 +70,9 @@ public class UploadChangesMojo extends AbstractMojo {
     @Parameter(property = "compressFormat", defaultValue = "tar.gz")
     private String compressFormat; // "tar.gz" 또는 "zip"
 
+    @Parameter(property = "skipUpload", defaultValue = "false")
+    private boolean skipUpload;
+
     private final Pattern pattern = Pattern.compile("^src[/\\\\]main[/\\\\]resources(?:-[a-zA-Z0-9]+)?([/\\\\].*)?$");
 
     public void setAppRootPath(String appRootPath) {
@@ -85,7 +88,9 @@ public class UploadChangesMojo extends AbstractMojo {
                 if (!Files.exists(uploadFile)) {
                     throw new MojoExecutionException("Upload file does not exist: " + uploadFile);
                 }
-                if (directUpload) {
+                if (skipUpload) {
+                    getLog().info("skipUpload=true, nothing to do for uploadFilePath.");
+                } else if (directUpload) {
                     uploadIndividualFiles(Collections.singletonList(uploadFile), null);
                 } else {
                     uploadFiles(Collections.singletonList(uploadFile));
@@ -102,7 +107,10 @@ public class UploadChangesMojo extends AbstractMojo {
 
                 getLog().info("Built Files: " + builtFiles.size() + " files");
 
-                if (directUpload) {
+                if (skipUpload) {
+                    Path archive = compressFiles(builtFiles);
+                    getLog().info("skipUpload=true, archive created without uploading: " + archive.toAbsolutePath());
+                } else if (directUpload) {
                     Path appRootDir = Paths.get("").toAbsolutePath().resolve(appRootPath);
                     uploadIndividualFiles(builtFiles, appRootDir);
                 } else {

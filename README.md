@@ -39,18 +39,19 @@
 
 ## 주요 파라미터
 
-| 파라미터 | 설명 |
-|---|---|
-| `commits` | Git 커밋 범위 (예: `abc123..def456`, 쉼표로 여러 개 지정 가능) |
-| `svnRevisions` | SVN 리비전 범위 (예: `100:105`) |
-| `remoteHost` | 배포 서버 호스트명 또는 IP |
-| `remoteUser` | 접속 계정 |
-| `privateKeyPath` | SSH 개인키 경로 (권장) |
-| `remotePassword` | 비밀번호 인증 시 사용 |
-| `remotePath` | 서버의 업로드 대상 경로 (기본: `/opt/deploy/`) |
-| `directUpload` | `true`이면 개별 파일 직접 업로드 |
-| `compressFormat` | 압축 방식: `tar.gz`(기본) 또는 `zip` (version:1.4.1)|
-| `uploadFilePath` | 변경 감지를 건너뛰고 업로드할 파일 직접 지정 |
+| 파라미터 | 설명                                                     |
+|---|--------------------------------------------------------|
+| `commits` | Git 커밋 범위 (예: `abc123..def456`, 쉼표로 여러 개 지정 가능)        |
+| `svnRevisions` | SVN 리비전 범위 (예: `100:105`)                              |
+| `remoteHost` | 배포 서버 호스트명 또는 IP                                       |
+| `remoteUser` | 접속 계정                                                  |
+| `privateKeyPath` | SSH 개인키 경로 (권장)                                        |
+| `remotePassword` | 비밀번호 인증 시 사용                                           |
+| `remotePath` | 서버의 업로드 대상 경로 (기본: `/opt/deploy/`)                     |
+| `directUpload` | `true`이면 개별 파일 직접 업로드                                  |
+| `compressFormat` | 압축 방식: `tar.gz`(기본) 또는 `zip` (version:1.4.1)           |
+| `skipUpload` | `true`이면 원격 서버 업로드를 건너뛰고 압축 파일만 로컬에 생성 (version:1.4.2) |
+| `uploadFilePath` | 변경 감지를 건너뛰고 업로드할 파일 직접 지정                              |
 
 ---
 
