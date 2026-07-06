@@ -3,6 +3,8 @@ package com.bongsoft.maven.plugins.bongfile;
 import com.jcraft.jsch.*;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -65,6 +67,9 @@ public class UploadChangesMojo extends AbstractMojo {
     @Parameter(property = "directUpload", defaultValue = "false")
     private boolean directUpload;
 
+    @Parameter(property = "compressFormat", defaultValue = "tar.gz")
+    private String compressFormat; // "tar.gz" 또는 "zip"
+
     private final Pattern pattern = Pattern.compile("^src[/\\\\]main[/\\\\]resources(?:-[a-zA-Z0-9]+)?([/\\\\].*)?$");
 
     public void setAppRootPath(String appRootPath) {
@@ -115,15 +120,19 @@ public class UploadChangesMojo extends AbstractMojo {
         Path basePath = Paths.get("").toAbsolutePath();
         Path appRootDir = basePath.resolve(appRootPath);// 예: 압축할 기준 경로 (루트)
 
-
-        // 압축 파일 경로
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-        String tarGzFileName = "deploy-" + timestamp + ".tar.gz";
-        File tarGzFile = new File(appRootDir.getParent().toFile(), tarGzFileName);
 
-        // 압축 스트림 설정
+        if ("zip".equalsIgnoreCase(compressFormat)) {
+            return compressToZip(builtFiles, appRootDir, timestamp);
+        }
+        return compressToTarGz(builtFiles, appRootDir, timestamp);
+    }
+
+    private Path compressToTarGz(List<Path> builtFiles, Path appRootDir, String timestamp) throws IOException {
+        File archiveFile = new File(appRootDir.getParent().toFile(), "deploy-" + timestamp + ".tar.gz");
+
         try (
-                FileOutputStream fos = new FileOutputStream(tarGzFile);
+                FileOutputStream fos = new FileOutputStream(archiveFile);
                 BufferedOutputStream bos = new BufferedOutputStream(fos);
                 GzipCompressorOutputStream gzos = new GzipCompressorOutputStream(bos);
                 TarArchiveOutputStream taos = new TarArchiveOutputStream(gzos)
@@ -146,11 +155,40 @@ public class UploadChangesMojo extends AbstractMojo {
                 compressedFileSize++;
             }
 
-
             taos.finish();
-            getLog().info("Compressed files("+ compressedFileSize +"): " + tarGzFile.getAbsolutePath());
+            getLog().info("Compressed files("+ compressedFileSize +"): " + archiveFile.getAbsolutePath());
         }
-        return tarGzFile.toPath();
+        return archiveFile.toPath();
+    }
+
+    private Path compressToZip(List<Path> builtFiles, Path appRootDir, String timestamp) throws IOException {
+        File archiveFile = new File(appRootDir.getParent().toFile(), "deploy-" + timestamp + ".zip");
+
+        try (
+                FileOutputStream fos = new FileOutputStream(archiveFile);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                ZipArchiveOutputStream zaos = new ZipArchiveOutputStream(bos)
+        ) {
+            int compressedFileSize = 0;
+            for (Path filePath : builtFiles) {
+                if (!filePath.startsWith(appRootDir)) {
+                    getLog().info("  Skip compress target. outside appRootDir: " + filePath);
+                    continue;
+                }
+
+                String relativePath = appRootDir.relativize(filePath).toString().replace(File.separator, "/");
+                ZipArchiveEntry entry = new ZipArchiveEntry(filePath.toFile(), relativePath);
+                zaos.putArchiveEntry(entry);
+                Files.copy(filePath, zaos);
+                zaos.closeArchiveEntry();
+                getLog().info("Compressed: " + relativePath);
+                compressedFileSize++;
+            }
+
+            zaos.finish();
+            getLog().info("Compressed files("+ compressedFileSize +"): " + archiveFile.getAbsolutePath());
+        }
+        return archiveFile.toPath();
     }
 
     private Set<String> getChangedFiles() throws IOException, InterruptedException {

@@ -8,7 +8,8 @@
       "Bash(claude doctor *)",
       "Bash(Get-Content \"C:\\\\Users\\\\kbong\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-kbong-IdeaProjects-bongfile-deploy-plugin\\\\eb777c97-172e-4928-a88e-a95b89f8a0ff\\\\tasks\\\\bo1gh3sov.output\" -Wait)",
       "Bash(Get-Content *)",
-      "PowerShell(claude doctor *)"
+      "PowerShell(claude doctor *)",
+      "Bash(mvn -q -o compile)"
     ]
   }
 }
