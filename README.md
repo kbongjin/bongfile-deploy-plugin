@@ -19,7 +19,7 @@
     <plugin>
       <groupId>com.bongsoft</groupId>
       <artifactId>bongfile-deploy-plugin</artifactId>
-      <version>1.4.0</version>
+      <version>1.4.2</version>
     </plugin>
   </plugins>
 </build>
@@ -79,6 +79,20 @@ mvn deploy:upload-changes \
   -DremotePath=/opt/tomcat/webapps/myapp/ \
   -DdirectUpload=true
 ```
+
+### zip 파일만 생성 (업로드 생략)
+
+서버 접속 없이 변경 파일을 zip으로 묶기만 합니다. 만들어진 압축 파일은 `appRootPath`의 상위 디렉터리(기본: `target/`)에 `deploy-<타임스탬프>.zip` 이름으로 생성됩니다.
+
+```bash
+mvn deploy:upload-changes \
+  -Dcommits=abc123..def456 \
+  -DcompressFormat=zip \
+  -DskipUpload=true
+```
+
+> `skipUpload=true`이면 SFTP 접속을 하지 않으므로 `remoteHost` 등 접속 정보는 생략해도 됩니다.
+> `compressFormat`을 생략하면 tar.gz로 생성됩니다.
 
 ### 롤백
 
